@@ -1180,7 +1180,7 @@
       border-radius: 42px;
       background:
         linear-gradient(to top, rgba(17, 17, 17, 0.58), transparent 58%),
-        url("event-bracelet.png");
+        url("/event-bracelet.png");
       background-size: cover;
       background-position: center;
       display: flex;
