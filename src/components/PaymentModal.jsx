@@ -16,6 +16,132 @@ import { createOrder } from "../services/orderService";
 import { formatPrice } from "../utils/format";
 
 
+
+const MAX_PAYMENT_PROOF_UPLOAD_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_PAYMENT_PROOF_STORED_SIZE = 1024 * 1024; // 1 MB
+
+function formatFileSize(bytes) {
+  if (!bytes) return "0 KB";
+
+  if (bytes < 1024 * 1024) {
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function getBaseFileName(fileName) {
+  return String(fileName || "payment-proof")
+    .replace(/\.[^/.]+$/, "")
+    .replace(/[^a-z0-9-_]+/gi, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase() || "payment-proof";
+}
+
+function loadImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Failed to read payment proof image."));
+    };
+
+    image.src = objectUrl;
+  });
+}
+
+function canvasToBlob(canvas, type, quality) {
+  return new Promise((resolve) => {
+    canvas.toBlob(resolve, type, quality);
+  });
+}
+
+async function preparePaymentProofImage(file) {
+  if (!file) return null;
+
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Please upload an image file for payment proof.");
+  }
+
+  if (file.size > MAX_PAYMENT_PROOF_UPLOAD_SIZE) {
+    throw new Error("Payment proof must be 5 MB or smaller.");
+  }
+
+  if (file.size <= MAX_PAYMENT_PROOF_STORED_SIZE) {
+    return file;
+  }
+
+  const image = await loadImageFromFile(file);
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error("Your browser cannot compress this image.");
+  }
+
+  const originalWidth = image.naturalWidth || image.width;
+  const originalHeight = image.naturalHeight || image.height;
+  const largestSide = Math.max(originalWidth, originalHeight);
+
+  let maxDimension = Math.min(1600, largestSide);
+  let quality = 0.86;
+  let lastBlob = null;
+
+  for (let attempt = 0; attempt < 18; attempt += 1) {
+    const scale = Math.min(1, maxDimension / largestSide);
+
+    canvas.width = Math.max(1, Math.round(originalWidth * scale));
+    canvas.height = Math.max(1, Math.round(originalHeight * scale));
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const blob = await canvasToBlob(canvas, "image/jpeg", quality);
+
+    if (!blob) {
+      throw new Error("Failed to compress payment proof image.");
+    }
+
+    lastBlob = blob;
+
+    if (blob.size <= MAX_PAYMENT_PROOF_STORED_SIZE) {
+      const baseName = getBaseFileName(file.name);
+
+      return new File([blob], `${baseName}-compressed.jpg`, {
+        type: "image/jpeg",
+        lastModified: Date.now()
+      });
+    }
+
+    if (quality > 0.48) {
+      quality -= 0.08;
+    } else {
+      quality = 0.82;
+      maxDimension = Math.round(maxDimension * 0.78);
+    }
+  }
+
+  if (lastBlob && lastBlob.size <= MAX_PAYMENT_PROOF_STORED_SIZE) {
+    const baseName = getBaseFileName(file.name);
+
+    return new File([lastBlob], `${baseName}-compressed.jpg`, {
+      type: "image/jpeg",
+      lastModified: Date.now()
+    });
+  }
+
+  throw new Error("Image could not be compressed under 1 MB. Please upload a clearer but smaller payment proof image.");
+}
+
+
 function getCleanWhatsAppNumber() {
   return String(config.whatsappOwner || "").replace(/\D/g, "");
 }
@@ -93,6 +219,7 @@ export default function PaymentModal({
   const [step, setStep] = useState("cart");
   const [customerName, setCustomerName] = useState("");
   const [paymentProofFile, setPaymentProofFile] = useState(null);
+  const [compressingProof, setCompressingProof] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const cartCount = useMemo(
@@ -131,6 +258,38 @@ export default function PaymentModal({
     }
 
     setStep("payment");
+  }
+
+
+  async function handlePaymentProofChange(event) {
+    const input = event.currentTarget;
+    const selectedFile = input.files?.[0] || null;
+
+    if (!selectedFile) {
+      setPaymentProofFile(null);
+      return;
+    }
+
+    setCompressingProof(true);
+
+    try {
+      const compressedFile = await preparePaymentProofImage(selectedFile);
+      setPaymentProofFile(compressedFile);
+
+      if (selectedFile.size > MAX_PAYMENT_PROOF_STORED_SIZE) {
+        showToast(
+          `Payment proof compressed from ${formatFileSize(selectedFile.size)} to ${formatFileSize(
+            compressedFile.size
+          )}.`
+        );
+      }
+    } catch (error) {
+      setPaymentProofFile(null);
+      input.value = "";
+      showToast(error.message || "Failed to compress payment proof image.");
+    } finally {
+      setCompressingProof(false);
+    }
   }
 
   async function sendPaymentProof() {
@@ -401,7 +560,7 @@ export default function PaymentModal({
                         className="upload-input"
                         type="file"
                         accept="image/*"
-                        onChange={(event) => setPaymentProofFile(event.target.files?.[0] || null)}
+                        onChange={handlePaymentProofChange}
                       />
 
                       <label className="upload-label" htmlFor="paymentProof">
@@ -415,8 +574,8 @@ export default function PaymentModal({
                           </strong>
                           <small>
                             {paymentProofFile
-                              ? "Click to replace the selected image"
-                              : "PNG, JPG, or JPEG up to 2MB"}
+                              ? `Compressed size: ${formatFileSize(paymentProofFile.size)}. Click to replace.`
+                              : "PNG, JPG, or JPEG up to 5 MB. Uploaded image will be stored under 1 MB."}
                           </small>
                         </span>
                       </label>
@@ -437,9 +596,13 @@ export default function PaymentModal({
                   <button
                     className="btn btn-dark btn-full"
                     onClick={sendPaymentProof}
-                    disabled={submitting}
+                    disabled={submitting || compressingProof}
                   >
-                    {submitting ? "Saving Order..." : "Confirm Payment via WhatsApp"}
+                    {compressingProof
+                      ? "Compressing Image..."
+                      : submitting
+                        ? "Saving Order..."
+                        : "Confirm Payment via WhatsApp"}
                     <Send size={18} />
                   </button>
                 </div>
