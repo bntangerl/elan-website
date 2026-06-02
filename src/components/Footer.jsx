@@ -48,7 +48,7 @@ export default function Footer() {
                 Instagram
               </a>
               <a href={`https://wa.me/${config.whatsappOwner}`} target="_blank" rel="noreferrer">
-                WhatsApp Owner
+                WhatsApp
               </a>
               <span>Made for mindful fashion and cleaner living.</span>
             </div>

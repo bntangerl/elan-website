@@ -17,7 +17,7 @@ import { formatPrice } from "../utils/format";
 
 
 
-const MAX_PAYMENT_PROOF_UPLOAD_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_PAYMENT_PROOF_UPLOAD_SIZE = 10 * 1024 * 1024; // 10 MB
 const MAX_PAYMENT_PROOF_STORED_SIZE = 1024 * 1024; // 1 MB
 
 function formatFileSize(bytes) {
@@ -72,7 +72,7 @@ async function preparePaymentProofImage(file) {
   }
 
   if (file.size > MAX_PAYMENT_PROOF_UPLOAD_SIZE) {
-    throw new Error("Payment proof must be 5 MB or smaller.");
+    throw new Error("Payment proof file is too large. Please upload a smaller image.");
   }
 
   if (file.size <= MAX_PAYMENT_PROOF_STORED_SIZE) {
@@ -575,7 +575,7 @@ export default function PaymentModal({
                           <small>
                             {paymentProofFile
                               ? `Compressed size: ${formatFileSize(paymentProofFile.size)}. Click to replace.`
-                              : "PNG, JPG, or JPEG up to 5 MB. Uploaded image will be stored under 1 MB."}
+                              : "PNG, JPG, or JPEG. Large images will be optimized automatically."}
                           </small>
                         </span>
                       </label>
