@@ -3154,7 +3154,7 @@ body.modal-open {
 
 
 
-/* Initial A-Z option grid */
+/* Initial / Number option grid */
 .letter-options {
   gap: 7px;
 }
@@ -3233,4 +3233,35 @@ body.modal-open {
   .map-preview-embed {
     min-height: 360px;
   }
+}
+
+
+
+/* Separate Initial and Number option groups */
+.option-group-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.option-group {
+  display: grid;
+  gap: 8px;
+}
+
+.option-group small {
+  color: var(--gray);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.letter-options {
+  gap: 7px;
+}
+
+.letter-options .chip {
+  min-width: 42px;
+  justify-content: center;
+  padding-inline: 12px;
 }

@@ -20,13 +20,13 @@ function combosToNotes(combos) {
 }
 
 function getComboWord(product) {
-  if (product?.selectionMode === "initial_color_combo") return "initial";
+  if (product?.selectionMode === "initial_color_combo") return "initial or number";
   if (product?.selectionMode === "character_color_combo") return "character";
   return "item";
 }
 
 function getComboTitle(product) {
-  if (product?.selectionMode === "initial_color_combo") return "Initial";
+  if (product?.selectionMode === "initial_color_combo") return "Initial / Number";
   if (product?.selectionMode === "character_color_combo") return "Character";
   return "Item";
 }
@@ -298,17 +298,39 @@ export default function ProductShowcase({ products, onAddToCart, showToast }) {
                     <>
                       <div>
                         <label className="field-label">{selectedProduct.optionsLabel}</label>
-                        <div className="variant-options letter-options">
-                          {(selectedProduct.variants || []).map((item) => (
-                            <button
-                              className={`chip ${variant === item ? "active" : ""}`}
-                              onClick={() => setVariant(item)}
-                              key={item}
-                            >
-                              {item}
-                            </button>
-                          ))}
-                        </div>
+
+                        {selectedProduct.optionGroups?.length ? (
+                          <div className="option-group-stack">
+                            {selectedProduct.optionGroups.map((group) => (
+                              <div className="option-group" key={group.label}>
+                                <small>{group.label}</small>
+                                <div className="variant-options letter-options">
+                                  {(group.options || []).map((item) => (
+                                    <button
+                                      className={`chip ${variant === item ? "active" : ""}`}
+                                      onClick={() => setVariant(item)}
+                                      key={item}
+                                    >
+                                      {item}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="variant-options letter-options">
+                            {(selectedProduct.variants || []).map((item) => (
+                              <button
+                                className={`chip ${variant === item ? "active" : ""}`}
+                                onClick={() => setVariant(item)}
+                                key={item}
+                              >
+                                {item}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       <div>
