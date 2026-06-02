@@ -15,6 +15,71 @@ import { config } from "../config";
 import { createOrder } from "../services/orderService";
 import { formatPrice } from "../utils/format";
 
+
+function getCleanWhatsAppNumber() {
+  return String(config.whatsappOwner || "").replace(/\D/g, "");
+}
+
+function createWhatsAppUrl(message) {
+  const phone = getCleanWhatsAppNumber();
+
+  if (!phone) {
+    throw new Error("WhatsApp owner number is not configured.");
+  }
+
+  return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
+}
+
+function openWhatsAppConfirmation(message) {
+  const url = createWhatsAppUrl(message);
+  const isMobile =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+
+  if (isMobile) {
+    window.location.href = url;
+    return;
+  }
+
+  const popup = window.open(url, "_blank", "noopener,noreferrer");
+
+  if (!popup) {
+    window.location.href = url;
+  }
+}
+
+function formatCustomizationNotes(notes) {
+  if (!notes) return "";
+
+  const lines = notes
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (!lines.length) return "";
+
+  const formattedLines = lines
+    .map((line, index) => `   ${index + 1}. ${line}`)
+    .join("\n");
+
+  return `\n   Customization:\n${formattedLines}`;
+}
+
+function formatOrderItems(cart) {
+  return cart
+    .map((item, index) => {
+      const customizationText = formatCustomizationNotes(item.notes);
+
+      return `${index + 1}. ${item.name}
+   Selection: ${item.variant}
+   Quantity: ${item.qty}
+   Price: ${formatPrice(item.price * item.qty)}${customizationText}`;
+    })
+    .join("\n\n");
+}
+
+
 export default function PaymentModal({
   open,
   onClose,
@@ -96,14 +161,7 @@ export default function PaymentModal({
         paymentProofFile
       });
 
-      const items = cart
-        .map((item) => {
-          const notes = item.notes ? `\n  Customization: ${item.notes}` : "";
-          return `- ${item.name}\n  Selection: ${item.variant}\n  Qty: ${item.qty}\n  Price: ${formatPrice(
-            item.price * item.qty
-          )}${notes}`;
-        })
-        .join("\n\n");
+      const items = formatOrderItems(cart);
 
       const message =
         `Hello Elan,\n\n` +
@@ -116,15 +174,13 @@ export default function PaymentModal({
         `Thank you.`;
 
       showToast("Order saved. Opening WhatsApp confirmation.");
-      window.open(
-        `https://wa.me/${config.whatsappOwner}?text=${encodeURIComponent(message)}`,
-        "_blank"
-      );
 
       clearCart();
       setCustomerName("");
       setPaymentProofFile(null);
       handleClose();
+
+      openWhatsAppConfirmation(message);
     } catch (error) {
       showToast(error.message || "Failed to save order. Please try again.");
     } finally {
