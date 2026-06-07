@@ -6,7 +6,7 @@ export function formatPrice(value) {
   }).format(Number(value || 0));
 }
 
-const braceletColors = [
+const defaultColors = [
   "Dark Blue",
   "Gray",
   "Black",
@@ -17,25 +17,12 @@ const braceletColors = [
   "Yellow"
 ];
 
-const addonColors = [
-  "Yellow",
-  "Red",
-  "Black",
-  "White",
-  "Green",
-  "Blue",
-  "Pink",
-  "Purple"
-];
-
-const initialOptions = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-const numberOptions = "0123456789".split("");
-const initialOrNumberOptions = [...initialOptions, ...numberOptions];
+const initialLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 function getProductType(product) {
   const text = String(`${product.slug || ""} ${product.id || ""} ${product.name || ""}`).toLowerCase();
 
-  if (text.includes("initial") || text.includes("number")) return "initial";
+  if (text.includes("initial")) return "initial";
   if (text.includes("character")) return "character";
   if (text.includes("beads") || text.includes("color")) return "beads";
 
@@ -56,7 +43,7 @@ function inferVariants(product) {
   const type = getProductType(product);
 
   if (type === "initial") {
-    return initialOrNumberOptions;
+    return initialLetters;
   }
 
   if (type === "character") {
@@ -64,29 +51,10 @@ function inferVariants(product) {
   }
 
   if (type === "beads") {
-    return braceletColors;
+    return defaultColors;
   }
 
   return Array.isArray(product.variants) ? product.variants : [];
-}
-
-function inferOptionGroups(product) {
-  const type = getProductType(product);
-
-  if (type === "initial") {
-    return [
-      {
-        label: "Initial Options",
-        options: initialOptions
-      },
-      {
-        label: "Number Options",
-        options: numberOptions
-      }
-    ];
-  }
-
-  return Array.isArray(product.optionGroups) ? product.optionGroups : [];
 }
 
 export function normalizeProduct(product) {
@@ -112,7 +80,7 @@ export function normalizeProduct(product) {
           : product.slug,
     name:
       isInitial
-        ? "Custom Initial / Number Add-on"
+        ? "Custom Initial Add-on"
         : isCharacter
           ? "Character Add-on"
           : product.name,
@@ -130,7 +98,7 @@ export function normalizeProduct(product) {
       isBeads
         ? "IDR 50,000 / bracelet"
         : isInitial
-          ? "IDR 2,500 / initial or number combination"
+          ? "IDR 2,500 / initial combination"
           : isCharacter
             ? "IDR 2,500 / character combination"
             : product.priceLabel || product.price_label || "",
@@ -138,25 +106,25 @@ export function normalizeProduct(product) {
       isBeads
         ? "Bracelet Colors"
         : isInitial
-          ? "Initial / Number"
+          ? "Initial"
           : isCharacter
             ? "Character"
             : product.optionsLabel ?? product.options_label ?? "Variant",
     colorLabel:
       isInitial
-        ? "Initial / Number Color"
+        ? "Initial Color"
         : isCharacter
           ? "Character Color"
           : "Color",
     notesLabel:
       isInitial
-        ? "Selected Initial / Number Combinations"
+        ? "Selected Initial Combinations"
         : isCharacter
           ? "Selected Character Combinations"
           : "",
     notesPlaceholder:
       isInitial
-        ? "Your selected initials or numbers will appear here automatically. Example: A - Blue or 7 - Pink."
+        ? "Your selected initials will appear here automatically. Example: A - Blue."
         : isCharacter
           ? "Your selected combinations will appear here automatically. Example: Star - Black."
           : "",
@@ -164,7 +132,7 @@ export function normalizeProduct(product) {
     showNotes: Boolean(isInitial || isCharacter),
     quantityLabel:
       isInitial
-        ? "Initial / Number Quantity"
+        ? "Initial Quantity"
         : isCharacter
           ? "Character Quantity"
           : "Quantity",
@@ -172,12 +140,14 @@ export function normalizeProduct(product) {
     beadPrice: null,
     defaultBeads: null,
     variants: inferVariants(product),
-    optionGroups: inferOptionGroups(product),
-    colorOptions: isAddon
-      ? addonColors
-      : Array.isArray(product.colorOptions) && product.colorOptions.length
-        ? product.colorOptions
-        : braceletColors,
+    colorOptions: Array.isArray(product.colorOptions) && product.colorOptions.length
+      ? product.colorOptions
+      : defaultColors,
+    beadSizeOptions: isBeads
+      ? beadSizeOptions
+      : Array.isArray(product.beadSizeOptions) && product.beadSizeOptions.length
+        ? product.beadSizeOptions
+        : [],
     images: Array.isArray(product.images) ? product.images : []
   };
 }

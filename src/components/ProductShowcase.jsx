@@ -20,13 +20,13 @@ function combosToNotes(combos) {
 }
 
 function getComboWord(product) {
-  if (product?.selectionMode === "initial_color_combo") return "initial or number";
+  if (product?.selectionMode === "initial_color_combo") return "initial";
   if (product?.selectionMode === "character_color_combo") return "character";
   return "item";
 }
 
 function getComboTitle(product) {
-  if (product?.selectionMode === "initial_color_combo") return "Initial / Number";
+  if (product?.selectionMode === "initial_color_combo") return "Initial";
   if (product?.selectionMode === "character_color_combo") return "Character";
   return "Item";
 }
@@ -41,6 +41,7 @@ export default function ProductShowcase({ products, onAddToCart, showToast }) {
 
   const [variant, setVariant] = useState("");
   const [selectedColors, setSelectedColors] = useState([]);
+  const [beadSize, setBeadSize] = useState("6mm");
   const [comboColor, setComboColor] = useState("");
   const [combos, setCombos] = useState([]);
   const [qty, setQty] = useState(1);
@@ -49,6 +50,10 @@ export default function ProductShowcase({ products, onAddToCart, showToast }) {
 
   const finalPrice = getFinalProductPrice(selectedProduct);
   const isMultiColor = selectedProduct?.selectionMode === "multi_color";
+  const isBeadsBase =
+    selectedProduct?.slug === "beads-color-bracelet" ||
+    selectedProduct?.id === "beads-color-bracelet" ||
+    (selectedProduct?.selectionMode === "multi_color" && selectedProduct?.productType !== "addon");
   const isCombo =
     selectedProduct?.selectionMode === "character_color_combo" ||
     selectedProduct?.selectionMode === "initial_color_combo";
@@ -71,6 +76,7 @@ export default function ProductShowcase({ products, onAddToCart, showToast }) {
 
     setVariant(selectedProduct.variants?.[0] || "Default");
     setSelectedColors([]);
+    setBeadSize(selectedProduct.beadSizeOptions?.[0] || "6mm");
     setComboColor(selectedProduct.colorOptions?.[0] || "Black");
     setCombos([]);
     setQty(1);
@@ -170,7 +176,7 @@ export default function ProductShowcase({ products, onAddToCart, showToast }) {
     if (!selectedProduct) return;
 
     const finalVariant = isMultiColor
-      ? selectedColors.slice().sort().join(", ")
+      ? `Colors: ${selectedColors.slice().sort().join(", ")} | Bead Size: ${beadSize}`
       : isCombo
         ? `${comboTitle} Color Combinations`
         : variant;
@@ -298,39 +304,17 @@ export default function ProductShowcase({ products, onAddToCart, showToast }) {
                     <>
                       <div>
                         <label className="field-label">{selectedProduct.optionsLabel}</label>
-
-                        {selectedProduct.optionGroups?.length ? (
-                          <div className="option-group-stack">
-                            {selectedProduct.optionGroups.map((group) => (
-                              <div className="option-group" key={group.label}>
-                                <small>{group.label}</small>
-                                <div className="variant-options letter-options">
-                                  {(group.options || []).map((item) => (
-                                    <button
-                                      className={`chip ${variant === item ? "active" : ""}`}
-                                      onClick={() => setVariant(item)}
-                                      key={item}
-                                    >
-                                      {item}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="variant-options letter-options">
-                            {(selectedProduct.variants || []).map((item) => (
-                              <button
-                                className={`chip ${variant === item ? "active" : ""}`}
-                                onClick={() => setVariant(item)}
-                                key={item}
-                              >
-                                {item}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                        <div className="variant-options letter-options">
+                          {(selectedProduct.variants || []).map((item) => (
+                            <button
+                              className={`chip ${variant === item ? "active" : ""}`}
+                              onClick={() => setVariant(item)}
+                              key={item}
+                            >
+                              {item}
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
                       <div>
@@ -433,6 +417,23 @@ export default function ProductShowcase({ products, onAddToCart, showToast }) {
                           </div>
                         )}
                       </div>
+
+                      {isBeadsBase ? (
+                        <div>
+                          <label className="field-label">Bead Size</label>
+                          <div className="variant-options">
+                            {(selectedProduct.beadSizeOptions || ["6mm", "8mm"]).map((item) => (
+                              <button
+                                className={`chip ${beadSize === item ? "active" : ""}`}
+                                onClick={() => setBeadSize(item)}
+                                key={item}
+                              >
+                                {item}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
 
                       <div>
                         <label className="field-label">
