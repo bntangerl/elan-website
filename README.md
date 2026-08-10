@@ -1,70 +1,27 @@
-# Elan — React + Supabase One-Page Landing
+# Elan — Sustainable Jewelry
 
-Versi ini adalah landing page 1 halaman. Menu navbar hanya melakukan smooth scroll ke section:
+Elan is a modern and elegant e-commerce platform for sustainable jewelry, created to combine minimalist aesthetics with an environmentally conscious shopping experience.
 
-- About Us -> `#about`
-- Product -> `#products`
-- Event -> `#event`
+The project focuses on delivering a clean, responsive, and user-friendly interface where customers can explore sustainable jewelry collections, view product details, and manage their shopping experience seamlessly.
 
-Tidak ada routing `/about`, `/products`, atau `/event`.
+### ✨ Highlights
 
-## Fitur
+* Modern and minimalist jewelry storefront
+* Responsive design for desktop and mobile devices
+* Sustainable jewelry product catalog
+* Product detail pages
+* Shopping cart functionality
+* Elegant typography and visual design
+* Supabase integration for backend data management
+* Built with React and modern web technologies
 
-- React JS + Vite
-- One-page landing page
-- Smooth scroll navbar
-- Produk dari Supabase
-- Cart dan checkout tetap di halaman yang sama
-- Order masuk ke Supabase
-- Upload bukti pembayaran ke Supabase Storage
-- QRIS statis
-- Konfirmasi WhatsApp
+### 🛠️ Tech Stack
 
-## Install
+* React
+* Vite
+* JavaScript
+* CSS
+* Supabase
+* Git & GitHub
 
-```bash
-npm install
-```
-
-## Env
-
-Copy file:
-
-```bash
-cp .env.example .env
-```
-
-Isi:
-
-```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-VITE_WHATSAPP_OWNER=6281234567890
-VITE_QRIS_IMAGE_URL=
-VITE_ELAN_LOGO_URL=
-```
-
-## Supabase
-
-1. Buka Supabase Project
-2. Masuk SQL Editor
-3. Copy isi `supabase/schema.sql`
-4. Run
-
-## Run local
-
-```bash
-npm run dev
-```
-
-Buka:
-
-```txt
-http://localhost:5173
-```
-
-## Build production
-
-```bash
-npm run build
-```
+Elan is developed as a modern web project that combines technology, aesthetics, and sustainability into a single digital shopping experience.
